@@ -37,12 +37,6 @@ app.get('/photos', (req, res) => {
   } else {
     res.sendStatus(400).json({ error: 'No filters in query' })
   }
-  // cloudinary.v2.search
-  //   .expression(`resource_type:image AND folder:"2K Homecare/*" AND tags:${req.params.folder}`)
-  //   .max_results(30)
-  //   .execute()
-  //   .then(result => res.json(result))
-  //   .catch(err => res.sendStatus(500).json(err));
 });
 
 app.listen(port, () => console.log(`Hooked on ${port}`));
