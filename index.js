@@ -3,12 +3,8 @@ const express = require('express');
 const port = process.env.PORT || 3000;
 const cors = require('cors');
 const app = express();
-const axios = require('axios');
 const cloudinary = require('cloudinary');
-// const headers = {
-//   'Authorization': `Bearer ${process.env.SMARTSHEET_TOKEN}`,
-//   'Content-Type': 'application/json'
-// };
+let _imgCache = new Map();
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_NAME,
@@ -32,7 +28,9 @@ app.get('/photos', (req, res) => {
     cloudinary.v2.search
       .expression(`resource_type:image AND folder:"2K Homecare/*" AND${expression}`)
       .execute()
-      .then(result => res.json(result))
+      .then(result => {
+        res.json(result);
+      })
       .catch(err => res.sendStatus(500).json(err));
   } else {
     res.sendStatus(400).json({ error: 'No filters in query' })
