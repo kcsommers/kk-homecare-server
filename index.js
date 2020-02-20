@@ -4,6 +4,7 @@ const port = process.env.PORT || 3000;
 const cors = require('cors');
 const app = express();
 const cloudinary = require('cloudinary');
+const db = require('./database');
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_NAME,
