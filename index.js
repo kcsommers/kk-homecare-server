@@ -4,13 +4,18 @@ const port = process.env.PORT || 3000;
 const cors = require('cors');
 const app = express();
 const cloudinary = require('cloudinary');
-let _imgCache = new Map();
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_SECRET
 });
+
+const parseFolder = folder => {
+  // 2K Homecare/painting
+  const segments = folder.split('/');
+  return segments[segments.length - 1];
+}
 
 app.use(cors());
 
@@ -29,7 +34,18 @@ app.get('/photos', (req, res) => {
       .expression(`resource_type:image AND folder:"2K Homecare/*" AND${expression}`)
       .execute()
       .then(result => {
-        res.json(result);
+        const imgMap = {};
+        if (result && result.resources) {
+          result.resources.forEach(img => {
+            const filter = parseFolder(img.folder);
+            if (imgMap[filter]) {
+              imgMap[filter].push(img.url);
+            } else {
+              imgMap[filter] = [img.url];
+            }
+          });
+        }
+        res.json(imgMap);
       })
       .catch(err => res.sendStatus(500).json(err));
   } else {
