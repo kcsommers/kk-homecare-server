@@ -5,12 +5,13 @@ const cors = require('cors');
 const app = express();
 const cloudinary = require('cloudinary');
 const db = require('./database');
+const Image = require('./models/image.model');
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_SECRET
-});
+// cloudinary.config({
+//   cloud_name: process.env.CLOUDINARY_NAME,
+//   api_key: process.env.CLOUDINARY_API_KEY,
+//   api_secret: process.env.CLOUDINARY_SECRET
+// });
 
 const parseFolder = folder => {
   // 2K Homecare/painting
@@ -23,32 +24,43 @@ app.use(cors());
 app.get('/photos', (req, res) => {
   const tags = req.query.filters && req.query.filters.split(',');
   if (tags && tags.length) {
-    const expression = tags.reduce((ex, tag, i) => {
-      let newStr = i === 0 ? ' (' : ' OR ';
-      newStr += `tags:${tag}`;
-      if (i === tags.length - 1) {
-        newStr += ')';
+    const fields = tags.map(tag => ({ tag }));
+    Image.find({ $or: fields }, (err, images) => {
+      console.log('IMGAES?', err, images)
+      if (err) {
+        res.sendStatus(500).json(err);
+      } else {
+        res.json(images);
       }
-      return ex + newStr;
-    }, '');
-    cloudinary.v2.search
-      .expression(`resource_type:image AND folder:"2K Homecare/*" AND${expression}`)
-      .execute()
-      .then(result => {
-        const imgMap = {};
-        if (result && result.resources) {
-          result.resources.forEach(img => {
-            const filter = parseFolder(img.folder);
-            if (imgMap[filter]) {
-              imgMap[filter].push(img.url);
-            } else {
-              imgMap[filter] = [img.url];
-            }
-          });
-        }
-        res.json(imgMap);
-      })
-      .catch(err => res.sendStatus(500).json(err));
+    });
+
+    // const expression = tags.reduce((ex, tag, i) => {
+    //   let newStr = i === 0 ? ' (' : ' OR ';
+    //   newStr += `tags:${tag}`;
+    //   if (i === tags.length - 1) {
+    //     newStr += ')';
+    //   }
+    //   return ex + newStr;
+    // }, '');
+    // cloudinary.v2.search
+    //   .expression(`resource_type:image AND folder:"2K Homecare/*" AND${expression}`)
+    //   .execute()
+    //   .then(result => {
+    //     const imgMap = {};
+    //     if (result && result.resources) {
+    //       result.resources.forEach(img => {
+    //         const filter = parseFolder(img.folder);
+
+    //         if (imgMap[filter]) {
+    //           imgMap[filter].push(img.url);
+    //         } else {
+    //           imgMap[filter] = [img.url];
+    //         }
+    //       });
+    //     }
+    //     res.json(imgMap);
+    //   })
+    //   .catch(err => res.sendStatus(500).json(err));
   } else {
     res.sendStatus(400).json({ error: 'No filters in query' })
   }
