@@ -6,6 +6,7 @@ const app = express();
 const cloudinary = require('cloudinary');
 const db = require('./database');
 const Image = require('./models/image.model');
+const bp = require('body-parser');
 
 // cloudinary.config({
 //   cloud_name: process.env.CLOUDINARY_NAME,
@@ -20,19 +21,44 @@ const parseFolder = folder => {
 }
 
 app.use(cors());
+app.use(bp.json());
 
-app.get('/photos', (req, res) => {
-  const tags = req.query.filters && req.query.filters.split(',');
-  if (tags && tags.length) {
-    const fields = tags.map(tag => ({ tag }));
-    Image.find({ $or: fields }, (err, images) => {
-      console.log('IMGAES?', err, images)
-      if (err) {
-        res.sendStatus(500).json(err);
-      } else {
-        res.json(images);
-      }
-    });
+app.post('/photos', (req, res) => {
+  const { filters, limit, offset, includeTotal } = req.body;
+  if (filters && filters.length) {
+    const fields = filters.map(tag => ({ tag }));
+    console.log('Fields::: ', fields);
+    const count = () => {
+      return new Promise((resolve, reject) => {
+        Image.count({ $or: fields }, (err, total) => {
+          if (!err) {
+            console.log('TOTLA:::: ', total)
+            resolve(total);
+          } else {
+            reject(err);
+          }
+        });
+      });
+    }
+
+    const find = (response, total) => {
+      Image.find({ $or: fields }, (err, images) => {
+        if (err) {
+          response.sendStatus(500).json(err);
+        } else {
+          console.log('new photos offset', offset)
+          response.json({ images, total });
+        }
+      }).skip(offset).limit(limit);
+    }
+
+    if (includeTotal) {
+      count()
+        .then(total => find(res, total))
+        .catch(err => res.sendStatus(500).json(err))
+    } else {
+      find(res);
+    }
 
     // const expression = tags.reduce((ex, tag, i) => {
     //   let newStr = i === 0 ? ' (' : ' OR ';
