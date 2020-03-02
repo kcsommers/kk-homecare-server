@@ -16,6 +16,8 @@ const parseFolder = folder => {
 
 app.use(cors());
 app.use(bp.json());
+app.use(bp.urlencoded({ extended: true }));
+app.use('/contact', require('./controllers/contact.router'));
 
 app.post('/photos', (req, res) => {
   const { limit, lastId, getTotal, fetchAll } = req.body;
