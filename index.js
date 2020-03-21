@@ -18,6 +18,7 @@ app.use(bp.urlencoded({ extended: true }));
 app.use('/contact', require('./controllers/contact.router'));
 app.use('/photos', require('./controllers/photos.router'));
 app.use('/admin', require('./controllers/admin.router'));
+app.use('/admin/invoices', require('./controllers/invoices.router'));
 
 app.listen(port, () => console.log(`Hooked on ${port}`));
 
