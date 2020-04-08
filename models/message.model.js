@@ -1,12 +1,14 @@
 const mongoose = require('mongoose');
 
 const messageSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  phone: Number,
+  client: {
+    name: String,
+    email: String,
+    phone: Number
+  },
   message: String,
   jobType: String,
-  replied: Boolean,
+  seen: Boolean,
   date: Date
 });
 

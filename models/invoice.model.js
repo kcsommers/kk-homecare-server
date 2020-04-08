@@ -7,7 +7,15 @@ const invoiceSchema = new mongoose.Schema({
     phone: Number
   },
   total: String,
-  items: [{ name: String, total: Number }],
+  items: [
+    {
+      name: String,
+      totalNum: Number,
+      totalString: String,
+      itemId: Number,
+      description: String
+    }
+  ],
   paid: Boolean,
   dueDate: Date,
   dateSent: Date,
