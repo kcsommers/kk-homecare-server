@@ -12,47 +12,156 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_SECRET
 });
 
-router.post('/', (req, res) => {
-  const { limit, lastId, getTotal, fetchAll } = req.body;
-  const fetchImages = () => {
+const getBeforeAfter = (fetchAll, getTotal, offset) => {
+  return new Promise((resolve, reject) => {
     if (fetchAll) {
-      return Image.find();
-    }
-    if (lastId) {
-      return Image.find({ _id: { $gt: lastId } }).limit(limit);
-    } else {
-      return Image.find().limit(limit);
-    }
-  }
-  if (getTotal) {
-    Image.countDocuments().exec().then((total) => {
-      fetchImages()
+      BeforeAfter
+        .countDocuments()
         .exec()
-        .then(images => res.json({ images, total }))
-        .catch(error => res.json({ error }))
-    });
+        .then(total => {
+          BeforeAfter
+            .find()
+            .exec()
+            .then(images => resolve({ total, images, success: true }))
+            .catch(err => reject({ error: err, success: false }))
+        }).catch(err => reject({ error: err, success: false }))
+    } else {
+      if (getTotal) {
+        BeforeAfter
+          .countDocuments()
+          .exec()
+          .then(total => {
+            BeforeAfter
+              .find()
+              .skip(offset)
+              .limit(1)
+              .exec()
+              .then(images => resolve({ total, images, success: true }))
+              .catch(err => reject({ error: err, success: false }))
+          }).catch(err => reject({ error: err, success: false }))
+      } else {
+        BeforeAfter
+          .find()
+          .skip(offset)
+          .limit(1)
+          .exec()
+          .then(images => resolve({ images, success: true }))
+          .catch(err => reject({ error: err, success: false }))
+      }
+    }
+  });
+};
+
+const getPhotos = (fetchAll, getTotal, lastId, limit) => {
+  return new Promise((resolve, reject) => {
+    if (fetchAll) {
+      Image
+        .countDocuments()
+        .exec()
+        .then(total => {
+          Image
+            .find()
+            .exec()
+            .then(images => resolve({ images, total, success: true }))
+            .catch(err => reject({ error: err, success: false }))
+        })
+        .catch(err => reject(err))
+    } else {
+      const query = lastId ? { _id: { $gt: lastId } } : {};
+      if (getTotal) {
+        Image
+          .countDocuments()
+          .exec()
+          .then(total => {
+            Image
+              .find(query)
+              .limit(limit)
+              .exec()
+              .then(images => resolve({ total, images, success: true }))
+              .catch(err => reject({ error: err, success: false }))
+          })
+          .catch(err => reject(err))
+      } else {
+        Image
+          .find(query)
+          .limit(limit)
+          .exec()
+          .then(images => resolve({ images, success: true }))
+          .catch(err => reject({ error: err, success: false }))
+      }
+    }
+  });
+}
+
+router.post('/', (req, res) => {
+  const {
+    limit,
+    offset,
+    lastId,
+    getTotal,
+    fetchAll,
+    beforeAfter
+  } = req.body;
+  if (beforeAfter) {
+    getBeforeAfter(fetchAll, getTotal, offset)
+      .then(result => res.json(result))
+      .catch(error => res.sendStatus(500).json(error))
   } else {
-    fetchImages()
-      .exec()
-      .then(images => res.json({ images }))
-      .catch(error => res.json({ error }))
+    getPhotos(fetchAll, getTotal, lastId, limit)
+      .then(result => res.json(result))
+      .catch(error => res.sendStatus(500).json(error))
   }
 });
 
-router.post('/before-after', (req, res) => {
-  const { offset } = req.body;
-  BeforeAfter.find()
-    .skip(offset)
-    .limit(1)
-    .exec()
-    .then(images => res.json({ images }))
-    .catch(error => res.sendStatus(500).json({ error }))
+router.post('/before-after/upload', upload.array('photos', 2), (req, res) => {
+
+  const uploadedImages = [];
+  const upload = async () => {
+
+    const uploadToCloudinary = (file) => {
+      return new Promise((resolve, reject) => {
+        cloudinary.uploader.upload(
+          file.path,
+          { folder: '2K Homecare/before-after' },
+          (err, res) => {
+            if (err) {
+              return reject(err);
+            }
+            resolve(res);
+          });
+      });
+    };
+
+    for (let i = 0; i < req.files.length; i++) {
+      const result = await uploadToCloudinary(req.files[i]);
+      uploadedImages.push(result);
+      console.log('RESULT', result);
+    }
+
+    if (uploadedImages && uploadedImages.length === 2) {
+      BeforeAfter.create({
+        beforeUrl: uploadedImages[0].url,
+        afterUrl: uploadedImages[1].url
+      }, (error, result) => {
+        if (error) {
+          res.sendStatus(500).json({ success: null, error });
+        } else {
+          res.json({ success: true, error: null, images: uploadedImages });
+        }
+      })
+    } else {
+      res.sendStatus(500).json({ success: false, error: 'Something went wrong' })
+    }
+
+    console.log('UPLOADED', uploadedImages)
+  };
+
+  upload();
+
 });
 
 router.post('/upload', upload.array('photos', 12), (req, res) => {
-  const { tag } = req.query;
-
-  console.log('TAG:::: ', tag);
+  const { tag, beforeAfter } = req.query;
 
   const uploadedImages = [];
   const upload = async () => {
