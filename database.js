@@ -9,7 +9,7 @@ class Database {
   _connect() {
     //Set up default mongoose connection
     mongoose.connect(
-      `mongodb://${process.env.DB_PORT}/${process.env.DB_NAME}`,
+      process.env.MONGODB_URI,
       { useNewUrlParser: true }
     )
       .then(() => console.log('DB Connected'))
