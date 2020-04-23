@@ -173,6 +173,8 @@ router.post('/before-after/upload', upload.array('photos', 2), (req, res) => {
 
 router.post('/upload', upload.array('photos', 12), (req, res) => {
 
+  console.log('UPLOADING:::: ', process.env.CLOUDINARY_API_KEY);
+
   const { tag } = req.query;
 
   const uploadedImages = [];
