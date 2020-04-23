@@ -1,4 +1,5 @@
 require('dotenv').config();
+const fs = require('fs');
 const router = require('express').Router();
 const Image = require('../models/image.model');
 const BeforeAfter = require('../models/before-after.model');
@@ -115,6 +116,8 @@ router.post('/', (req, res) => {
 
 router.post('/before-after/upload', upload.array('photos', 2), (req, res) => {
 
+  console.log('REQ>FILES', req.files);
+
   const uploadedImages = [];
   const upload = async () => {
 
@@ -124,6 +127,11 @@ router.post('/before-after/upload', upload.array('photos', 2), (req, res) => {
           file.path,
           { folder: '2K Homecare/before-after' },
           (err, res) => {
+            fs.unlink(file.path, (err) => {
+              if (err) {
+                console.error(err)
+              }
+            });
             if (err) {
               return reject(err);
             }
@@ -135,7 +143,6 @@ router.post('/before-after/upload', upload.array('photos', 2), (req, res) => {
     for (let i = 0; i < req.files.length; i++) {
       const result = await uploadToCloudinary(req.files[i]);
       uploadedImages.push(result);
-      console.log('RESULT', result);
     }
 
     if (uploadedImages && uploadedImages.length === 2) {
@@ -153,7 +160,6 @@ router.post('/before-after/upload', upload.array('photos', 2), (req, res) => {
       res.sendStatus(500).json({ success: false, error: 'Something went wrong' })
     }
 
-    console.log('UPLOADED', uploadedImages)
   };
 
   upload();
@@ -161,7 +167,8 @@ router.post('/before-after/upload', upload.array('photos', 2), (req, res) => {
 });
 
 router.post('/upload', upload.array('photos', 12), (req, res) => {
-  const { tag, beforeAfter } = req.query;
+
+  const { tag } = req.query;
 
   const uploadedImages = [];
   const upload = async () => {
@@ -172,6 +179,11 @@ router.post('/upload', upload.array('photos', 12), (req, res) => {
           file.path,
           { tags: [tag], folder: `2K Homecare/${tag}` },
           (err, res) => {
+            fs.unlink(file.path, (err) => {
+              if (err) {
+                console.error(err)
+              }
+            });
             if (err) {
               return reject(err);
             }
@@ -183,7 +195,6 @@ router.post('/upload', upload.array('photos', 12), (req, res) => {
     for (let i = 0; i < req.files.length; i++) {
       const result = await uploadToCloudinary(req.files[i]);
       uploadedImages.push(result);
-      console.log('RESULT', result);
     }
 
     console.log('UPLOADED', uploadedImages)
