@@ -141,8 +141,13 @@ router.post('/before-after/upload', upload.array('photos', 2), (req, res) => {
     };
 
     for (let i = 0; i < req.files.length; i++) {
-      const result = await uploadToCloudinary(req.files[i]);
-      uploadedImages.push(result);
+      try {
+        const result = await uploadToCloudinary(req.files[i]);
+        uploadedImages.push(result);
+      } catch (error) {
+        console.error(error);
+      }
+
     }
 
     if (uploadedImages && uploadedImages.length === 2) {
@@ -193,8 +198,12 @@ router.post('/upload', upload.array('photos', 12), (req, res) => {
     };
 
     for (let i = 0; i < req.files.length; i++) {
-      const result = await uploadToCloudinary(req.files[i]);
-      uploadedImages.push(result);
+      try {
+        const result = await uploadToCloudinary(req.files[i]);
+        uploadedImages.push(result);
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     console.log('UPLOADED', uploadedImages)
