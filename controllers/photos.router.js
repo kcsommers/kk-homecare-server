@@ -209,6 +209,39 @@ router.post('/upload', upload.array('photos', 12), (req, res) => {
     }
 
     console.log('UPLOADED', uploadedImages)
+    if (uploadedImages && uploadedImages.length) {
+      const errored = [];
+
+      const saveToDb = (image) => {
+        return new Promise((resolve, reject) => {
+          Image.create({
+            beforeUrl: uploadedImages[0].url,
+            afterUrl: uploadedImages[1].url
+          }, (error, result) => {
+            if (error) {
+              reject({ error, image });
+            } else {
+              console.log('SAVED IT')
+              resolve(true);
+            }
+          })
+        });
+      }
+
+      for (let i = 0; i < uploadedImages.length; i++) {
+        try {
+          const result = await saveToDb(uploadedImages[i]);
+        } catch (error) {
+          errored.push(error);
+        }
+      }
+      if (!errored.length) {
+        return res.json({ success: true, error: null, images: uploadedImages });
+      }
+      res.json({ success: false, error: errored, images: uploadedImages });
+    } else {
+      res.sendStatus(500).json({ success: false, error: 'Something went wrong' })
+    }
   };
 
   upload();
