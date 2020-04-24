@@ -215,8 +215,8 @@ router.post('/upload', upload.array('photos', 12), (req, res) => {
       const saveToDb = (image) => {
         return new Promise((resolve, reject) => {
           Image.create({
-            beforeUrl: uploadedImages[0].url,
-            afterUrl: uploadedImages[1].url
+            url: image.url,
+            tag: image.tags[0]
           }, (error, result) => {
             if (error) {
               reject({ error, image });
