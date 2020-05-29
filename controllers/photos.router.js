@@ -116,8 +116,6 @@ router.post('/', (req, res) => {
 
 router.post('/before-after/upload', upload.array('photos', 2), (req, res) => {
 
-  console.log('REQ>FILES', req.files);
-
   const uploadedImages = [];
   const upload = async () => {
 
